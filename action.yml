@@ -1,0 +1,118 @@
+name: "example-nightly-wheels"
+description: "Upload nightly wheels to Anaconda cloud"
+author: "Matthew Feickert"
+branding:
+  icon: "package"
+  color: "green"
+inputs:
+  project-repo:
+    description: "GitHub project name to download built wheels from"
+    required: true
+  target-branch:
+    description: "Project branch to check for workflows run"
+    required: true
+  workflow-name:
+    description: "Workflow name to query runs"
+    required: true
+  workflow-event-type:
+    description: "GitHub event that triggered workflow (push, schedule)"
+    required: true
+    default: "push"
+  artifact-name:
+    description: "Artifact to try to download"
+    required: true
+    default: "wheels"
+  anaconda-user:
+    description: "User name on Anaconda Cloud"
+    required: true
+  anaconda-project:
+    description: "Project name on Anaconda Cloud"
+    required: true
+  anaconda-token:
+    description: "Authentication token for Anaconda Cloud. Probably secrets.ANACONDA_ORG_UPLOAD_TOKEN"
+    required: true
+  n-latest-uploads:
+    description: "Number of uploads to keep on Anaconda Cloud."
+    required: true
+    default: 5
+  token:
+    description: "GitHub token for access to gh API"
+    required: false
+    default: "secrets.GITHUB_TOKEN"
+runs:
+  using: "composite"
+  steps:
+    - name: Install micromamba and anaconda-client
+      uses: mamba-org/provision-with-micromamba@v12
+      with:
+        environment-file: false
+        environment-name: nightly-wheels
+        extra-specs: anaconda-client=1.10.0
+        channels: main
+
+    # c.f. https://github.com/actions/download-artifact/issues/3#issuecomment-1017141067
+    - name: Download wheel artifacts from last build on '${{ inputs.target-branch }}'
+      run: |
+        gh run --repo "${{ inputs.project-repo }}" \
+            list --branch "${{ inputs.target-branch }}" \
+                --workflow "${{ inputs.workflow-name }}" \
+                --json event,status,databaseId > runs.json
+
+        # Filter on '${{ inputs.workflow-event-type }}' events to ${{ inputs.target-branch }} (merged PRs) that have completed
+        jq --compact-output \
+          '[ .[] | select(.event == "${{ inputs.workflow-event-type }}") | select(.status == "completed") ]' \
+          runs.json > completed.json
+
+        # Get id of latest build of wheels
+        RUN_ID=$(
+          jq --compact-output \
+            'sort_by(.databaseId) | reverse | .[0].databaseId' completed.json
+        )
+        gh run --repo "${{ inputs.project-repo }}" \
+            download "${RUN_ID}" --name "${{ inputs.artifact-name }}"
+
+        mkdir dist
+        mv *.whl dist/
+        echo "# Downloaded ${{ inputs.project-repo }} wheels"
+        ls -l dist/
+      shell: bash
+
+    - name: Show anaconda-client CLI API
+      run: anaconda --help
+      shell: bash -l {0}
+
+    # - name: Upload wheels to Anaconda Cloud as nightlies
+    #   run: |
+    #     anaconda --token ${{ inputs.anaconda-token }} upload \
+    #       --user ${{ inputs.anaconda-user }} \
+    #       --skip-existing \
+    #       dist/*.whl
+    #   shell: bash -l {0}
+
+    - name: Remove old uploads to save space
+      run: |
+        # Remove all _but_ the last ${{ inputs.n-latest-uploads }} package versions
+        # N.B.: `anaconda show` places the newest packages at the bottom of the output
+        # of the 'Versions' section and package versions are preceded with a '   + '.
+        anaconda show "${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}" &> >(grep '+') | \
+            sed 's/.* + //' | \
+            head --lines "-${{ inputs.n-latest-uploads }}" > remove-package-versions.txt
+
+        # if [ -s remove-package-versions.txt ]; then
+        #     while LANG=C IFS= read -r package_version ; do
+        #         echo "# Removing ${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}/${package_version}"
+        #         anaconda --token ${{ inputs.anaconda-token }} remove \
+        #           --force \
+        #           "${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}/${package_version}"
+        #     done <remove-package-versions.txt
+        # fi
+      shell: bash -l {0}
+
+    - name: Cleanup transient files
+      run: |
+        rm -r \
+          runs.json \
+          completed.json \
+          remove-package-versions.txt \
+          dist
+      shell: bash
