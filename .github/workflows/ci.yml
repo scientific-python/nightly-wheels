@@ -24,9 +24,9 @@ jobs:
           target-branch: "main"
           workflow-name: "cibuildwheel.yml"
           workflow-event-type: "push"
-          anaconda-user: "scipy-wheels-nightly"
+          anaconda-user: "scientific-python-nightly-wheels"
           anaconda-project: "matplotlib"
-          anaconda-token: "none"
+          anaconda-token: ${{ secrets.anaconda_token }}
 
   test-upload:
     name: "test upload"
@@ -35,85 +35,98 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Download test wheels
+        run: |
+          python -m pip download \
+            --no-deps \
+            --dest dist \
+            --index-url https://pypi.anaconda.org/scipy-wheels-nightly/simple \
+            matplotlib
+
+          ls -lhtra dist
+
+          sleep 30
+
       - name: Run nightly-wheels
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: ./
         with:
-          download-wheels: true
-          project-repo: "matplotlib/matplotlib"
-          target-branch: "main"
-          workflow-name: "cibuildwheel.yml"
-          workflow-event-type: "push"
           anaconda-user: "scientific-python-nightly-wheels"
-          anaconda-project: "test-download"
+          anaconda-project: "matplotlib"
+          wheel-directory: "dist"
           anaconda-token: ${{ secrets.anaconda_token }}
 
-  test-scikit-learn:
-    name: "test scikit-learn"
-    runs-on: ubuntu-latest
+  # test-scikit-learn:
+  #   name: "test scikit-learn"
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Run nightly-wheels
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: ./
-        with:
-          download-wheels: true
-          project-repo: "scikit-learn/scikit-learn"
-          target-branch: "main"
-          workflow-name: "wheel builder"
-          workflow-event-type: "schedule"
-          artifact-name: "artifact"
-          anaconda-user: "scipy-wheels-nightly"
-          anaconda-project: "scikit-learn"
-          anaconda-token: "none"
-          n-latest-uploads: 1
+  #     - name: Run nightly-wheels
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       uses: ./
+  #       with:
+  #         download-wheels: true
+  #         project-repo: "scikit-learn/scikit-learn"
+  #         target-branch: "main"
+  #         workflow-name: "wheel builder"
+  #         workflow-event-type: "schedule"
+  #         artifact-name: "artifact"
+  #         anaconda-user: "scipy-wheels-nightly"
+  #         anaconda-project: "scikit-learn"
+  #         anaconda-token: "none"
+  #         n-latest-uploads: 1
 
-  test-numpy:
-    name: "test numpy"
-    runs-on: ubuntu-latest
+  # test-numpy:
+  #   name: "test numpy"
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Run nightly-wheels
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: ./
-        with:
-          download-wheels: true
-          project-repo: "numpy/numpy"
-          target-branch: "macos1015"
-          workflow-name: "wheel builder"
-          workflow-event-type: "pull_request"
-          artifact-name: "cp38-manylinux_x86_64"
-          anaconda-user: "scipy-wheels-nightly"
-          anaconda-project: "numpy"
-          anaconda-token: "none"
-          n-latest-uploads: 2
+  #     - name: Run nightly-wheels
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       uses: ./
+  #       with:
+  #         download-wheels: true
+  #         project-repo: "numpy/numpy"
+  #         target-branch: "macos1015"
+  #         workflow-name: "wheel builder"
+  #         workflow-event-type: "pull_request"
+  #         artifact-name: "cp38-manylinux_x86_64"
+  #         anaconda-user: "scipy-wheels-nightly"
+  #         anaconda-project: "numpy"
+  #         anaconda-token: "none"
+  #         n-latest-uploads: 2
 
-  test-scipy:
-    name: "test scipy"
-    runs-on: ubuntu-latest
+  # test-scipy:
+  #   name: "test scipy"
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Run nightly-wheels
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: ./
-        with:
-          download-wheels: true
-          project-repo: "scipy/scipy"
-          target-branch: "cibw2"
-          workflow-name: "wheel builder"
-          workflow-event-type: "pull_request"
-          artifact-name: "cp311-manylinux"
-          anaconda-user: "scipy-wheels-nightly"
-          anaconda-project: "scipy"
-          anaconda-token: "none"
-          n-latest-uploads: 2
+  #     - name: Run nightly-wheels
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       uses: ./
+  #       with:
+  #         download-wheels: true
+  #         project-repo: "scipy/scipy"
+  #         target-branch: "cibw2"
+  #         workflow-name: "wheel builder"
+  #         workflow-event-type: "pull_request"
+  #         artifact-name: "cp311-manylinux"
+  #         anaconda-user: "scipy-wheels-nightly"
+  #         anaconda-project: "scipy"
+  #         anaconda-token: "none"
+  #         n-latest-uploads: 2

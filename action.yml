@@ -106,14 +106,14 @@ runs:
             sed 's/.* + //' | \
             head --lines "-${{ inputs.n-latest-uploads }}" > remove-package-versions.txt
 
-        # if [ -s remove-package-versions.txt ]; then
-        #     while LANG=C IFS= read -r package_version ; do
-        #         echo "# Removing ${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}/${package_version}"
-        #         anaconda --token ${{ inputs.anaconda-token }} remove \
-        #           --force \
-        #           "${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}/${package_version}"
-        #     done <remove-package-versions.txt
-        # fi
+        if [ -s remove-package-versions.txt ]; then
+            while LANG=C IFS= read -r package_version ; do
+                echo "# Removing ${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}/${package_version}"
+                anaconda --token ${{ inputs.anaconda-token }} remove \
+                  --force \
+                  "${{ inputs.anaconda-user }}/${{ inputs.anaconda-project }}/${package_version}"
+            done <remove-package-versions.txt
+        fi
       shell: bash -l {0}
 
     - name: Cleanup transient files
