@@ -89,13 +89,13 @@ runs:
       run: anaconda --help
       shell: bash -l {0}
 
-    # - name: Upload wheels to Anaconda Cloud as nightlies
-    #   run: |
-    #     anaconda --token ${{ inputs.anaconda-token }} upload \
-    #       --user ${{ inputs.anaconda-user }} \
-    #       --skip-existing \
-    #       "${{ inputs.wheel-directory }}"/*.whl
-    #   shell: bash -l {0}
+    - name: Upload wheels to Anaconda Cloud as nightlies
+      run: |
+        anaconda --token ${{ inputs.anaconda-token }} upload \
+          --user ${{ inputs.anaconda-user }} \
+          --skip-existing \
+          "${{ inputs.wheel-directory }}"/*.whl
+      shell: bash -l {0}
 
     - name: Remove old uploads to save space
       run: |

@@ -28,6 +28,27 @@ jobs:
           anaconda-project: "matplotlib"
           anaconda-token: "none"
 
+  test-upload:
+    name: "test upload"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run nightly-wheels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ./
+        with:
+          download-wheels: true
+          project-repo: "matplotlib/matplotlib"
+          target-branch: "main"
+          workflow-name: "cibuildwheel.yml"
+          workflow-event-type: "push"
+          anaconda-user: "scientific-python-nightly-wheels"
+          anaconda-project: "test-download"
+          anaconda-token: ${{ secrets.anaconda_token }}
+
   test-scikit-learn:
     name: "test scikit-learn"
     runs-on: ubuntu-latest
