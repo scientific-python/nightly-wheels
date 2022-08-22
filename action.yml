@@ -59,7 +59,8 @@ runs:
 
     # c.f. https://github.com/actions/download-artifact/issues/3#issuecomment-1017141067
     - name: Download wheel artifacts from last build on '${{ inputs.target-branch }}'
-      if: ${{ inputs.download-wheels }} == true
+      # Booleans in GitHub Actions are still strings, so need to compare to 'true'
+      if: ${{ inputs.download-wheels }} == 'true'
       run: |
         gh run --repo "${{ inputs.project-repo }}" \
             list --branch "${{ inputs.target-branch }}" \

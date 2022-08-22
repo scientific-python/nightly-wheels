@@ -57,7 +57,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: ./
         with:
-          download-wheels: false
           anaconda-user: "scientific-python-nightly-wheels"
           anaconda-project: "matplotlib"
           wheel-directory: "dist"
