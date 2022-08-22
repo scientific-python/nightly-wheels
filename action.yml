@@ -25,6 +25,10 @@ inputs:
     description: "Artifact to try to download"
     required: false
     default: "wheels"
+  wheel-directory:
+    description: "Name of the directory that the wheels are located in"
+    required: true
+    default: "dist"
   anaconda-user:
     description: "User name on Anaconda Cloud"
     required: true
@@ -75,10 +79,10 @@ runs:
         gh run --repo "${{ inputs.project-repo }}" \
             download "${RUN_ID}" --name "${{ inputs.artifact-name }}"
 
-        mkdir dist
-        mv *.whl dist/
+        mkdir "${{ inputs.wheel-directory }}"
+        mv *.whl "${{ inputs.wheel-directory }}"/
         echo "# Downloaded ${{ inputs.project-repo }} wheels"
-        ls -l dist/
+        ls -l "${{ inputs.wheel-directory }}"/
       shell: bash
 
     - name: Show anaconda-client CLI API
@@ -90,7 +94,7 @@ runs:
     #     anaconda --token ${{ inputs.anaconda-token }} upload \
     #       --user ${{ inputs.anaconda-user }} \
     #       --skip-existing \
-    #       dist/*.whl
+    #       "${{ inputs.wheel-directory }}"/*.whl
     #   shell: bash -l {0}
 
     - name: Remove old uploads to save space
@@ -114,9 +118,12 @@ runs:
 
     - name: Cleanup transient files
       run: |
+        if [ "${{ inputs.download-wheels }}" == "true" ]; then
+          rm -r \
+            runs.json \
+            completed.json \
+        fi
         rm -r \
-          runs.json \
-          completed.json \
           remove-package-versions.txt \
-          dist
+          "${{ inputs.wheel-directory }}"
       shell: bash
