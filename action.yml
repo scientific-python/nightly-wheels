@@ -121,7 +121,7 @@ runs:
         if [ "${{ inputs.download-wheels }}" == "true" ]; then
           rm -r \
             runs.json \
-            completed.json \
+            completed.json
         fi
         rm -r \
           remove-package-versions.txt \
