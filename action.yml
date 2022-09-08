@@ -54,7 +54,7 @@ runs:
       with:
         environment-file: false
         environment-name: nightly-wheels
-        extra-specs: anaconda-client=1.10.0
+        extra-specs: anaconda-client=1.11.0
         channels: main
 
     # c.f. https://github.com/actions/download-artifact/issues/3#issuecomment-1017141067
